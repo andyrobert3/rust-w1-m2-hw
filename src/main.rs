@@ -67,7 +67,10 @@ impl BuyerGroup {
             return;
         }
 
-        let buyer = &mut self.members[buyer_index];
+        let buyer = match self.members.get_mut(buyer_index) {
+            Some(b) => b,
+            None => return
+        };
 
         // Transfer amount from "buyer" -> "seller"
         while buyer.balance >= seller.price {

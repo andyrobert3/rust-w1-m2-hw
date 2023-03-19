@@ -1,8 +1,9 @@
 // Define an Enum PaymentType with variants:
     // DigitalToken
     // Cash
-#[derive(PartialEq)]
-#[derive(Clone)]
+// "Debug" -> print enum data type
+// "PartialEq" -> Equate enumeration type
+#[derive(Debug, PartialEq, Clone)] 
 enum PaymentType {
     DigitalToken,
     Cash,
@@ -52,9 +53,9 @@ impl BuyerGroup {
         self.members.push(buyer.clone());
     }
 
-    fn find_buyer(&self, buyer_payment_type: PaymentType) -> i32 {
+    fn find_buyer(&self, buyer_payment_type: &PaymentType) -> i32 {
         for (i, member) in self.members.iter().enumerate() {
-            if member.payment_type == buyer_payment_type {
+            if member.payment_type == *buyer_payment_type {
                 return i as i32;
             }
         }
@@ -114,12 +115,22 @@ fn main() {
         balance: 0.0,
     };
 
+    let james_seller_balance_prev = james_seller.balance;
+    let buyer_payment_type = PaymentType::Cash;
+
     // Call find_buyer method on the buyer group to get index of buyer with Cash payment type
-    let buyer_index: i32 = buyer_group.find_buyer(PaymentType::Cash);
+    let buyer_index: i32 = buyer_group.find_buyer(&buyer_payment_type);
     assert_eq!(buyer_index, 1, "Buyer index is supposed to be Sally at index 1");
 
+    // What if "buyer_index" is < 0 here?
+    // Casting i32 -> usize causes underflow, MAX_INT - "buyer_index" 
+    if buyer_index < 0 {
+        println!("Buyer with payment type: {:?} is non-existent", buyer_payment_type);
+        return;
+    }
+
     // Call buy method on the buyer group passing the index of we have obtained right before and the seller
-    buyer_group.buy(buyer_index as usize, &mut james_seller);
+    buyer_group.buy(buyer_index.try_into().unwrap(), &mut james_seller);
 
     let buyer_group_members = buyer_group.members;
     let buyer_payment_cash = &buyer_group_members[buyer_index.abs() as usize];
@@ -127,6 +138,6 @@ fn main() {
     // Buyer balance should be left with the remainder of the "balance" / "price"
     assert_eq!(buyer_payment_cash.balance, sally.balance % james_seller.price);
     // Seller balance should be increased by difference in buyer's balance
-    assert_eq!(james_seller.balance, sally.balance - buyer_payment_cash.balance)
+    assert_eq!(james_seller.balance - james_seller_balance_prev, sally.balance - buyer_payment_cash.balance);
 
 }
